@@ -248,3 +248,17 @@ func SleepFn(t *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwarg
 
 	return starlark.None, nil
 }
+
+// LookupEnvFn implements built-in for LookupEnv.
+func LookupEnvFn(t *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var key string
+	if err := starlark.UnpackPositionalArgs(b.Name(), args, kwargs, 1, &key); err != nil {
+		return nil, err
+	}
+
+	if value, exists := os.LookupEnv(key); exists {
+		return starlark.String(value), nil
+	}
+
+	return starlark.None, fmt.Errorf("The env var `%s' does not exist", key)
+}
