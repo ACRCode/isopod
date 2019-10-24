@@ -1,7 +1,7 @@
 import groovy.transform.Field
 
 jsl = library(
-  identifier: "jenkins-shared-library@${env.BRANCH_NAME}",
+  identifier: "jenkins-shared-library@1.0.57",
   retriever: modernSCM(
     [
       $class: 'GitSCMSource',
