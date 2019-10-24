@@ -41,6 +41,7 @@ version = jsl.org.acr.jenkins.Version.new(this, versionPrefix)
 errorSummary = jsl.org.acr.jenkins.ErrorSummary.new(this)
 slack = jsl.org.acr.jenkins.Slack.new(this, 'slack-pipeline-token', 'SLACK_LEGACY_TOKEN')
 
+
 pipeline{
   agent {
     kubernetes {
@@ -75,16 +76,16 @@ pipeline{
         }
       }
     }
+  }
 
-    post{
-      success {
-        script{slack.notifySuccess('dmd', appName, version.buildVersion)}
-      }
-      failure {
-        script{errorSummary.generate(LAST_STAGE)}
+  post{
+    success {
+      script{slack.notifySuccess('dmd', appName, version.buildVersion)}
+    }
+    failure {
+      script{errorSummary.generate(LAST_STAGE)}
 
-        script{slack.notifyFailure('dmd', appName, version.buildVersion, LAST_STAGE)}
-      }
+      script{slack.notifyFailure('dmd', appName, version.buildVersion, LAST_STAGE)}
     }
   }
 }
