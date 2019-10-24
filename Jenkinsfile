@@ -1,17 +1,45 @@
+import groovy.transform.Field
 
+jsl = library(
+  identifier: "jenkins-shared-library@${env.BRANCH_NAME}",
+  retriever: modernSCM(
+    [
+      $class: 'GitSCMSource',
+      remote: 'https://github.com/ACRCode/jenkins-shared-library.git',
+      credentialsId: 'github'
+    ]
+  )
+)
+
+// -----------------------------------------
+// the following variables are customizable
+// -----------------------------------------
+@Field
 def appName = 'isopod'
 
-def buildVersion(){
-  def retval = "${versionPrefix}.${gitVersion}"
-  if (env.BRANCH_NAME != 'master') {
-    retval + "-${env.BRANCH_NAME}"
-  }
-  return retval
+@Field
+def versionPrefix = '1.0'
+
+// -----------------------------------------
+//      Do not change the values below
+// -----------------------------------------
+@Field
+def project = 'acrcode'
+
+@Field
+def image = "${project}/${appName}"
+
+def getImageTag(){
+  return "${image}:${version.buildVersion}"
 }
 
-def imageTag(){
-  return "${image}:${buildVersion()}"
-}
+@Field
+def LAST_STAGE
+
+
+version = jsl.org.acr.jenkins.Version.new(this, versionPrefix)
+errorSummary = jsl.org.acr.jenkins.ErrorSummary.new(this)
+slack = jsl.org.acr.jenkins.Slack.new(this, 'slack-pipeline-token', 'SLACK_LEGACY_TOKEN')
 
 pipeline{
   agent {
@@ -22,34 +50,16 @@ pipeline{
   }
 
   environment{
-    // -----------------------------------------
-    // the following variables are customizable
-    // -----------------------------------------
-    versionPrefix = '0.1'
-
-    // -----------------------------------------
-    //      Do not change the values below
-    // -----------------------------------------
-    project = 'acrcode'
-    gitVersion = 'notset'
-    image = "${project}/${appName}"
-
     DOCKER_CREDS = credentials('docker-hub')
   }
 
   stages{
     stage('Checkout'){
       steps{
+        script{LAST_STAGE = env.STAGE_NAME}
         checkout scm
 
-        script{
-          gitVersion = sh(
-            script: 'git rev-list --no-merges --count $(git rev-parse HEAD) -- .',
-            returnStdout: true
-          ).trim()
-
-          currentBuild.displayName = buildVersion()
-        }
+        script{version.changeDisplayNameToBuildVersion()}
       }
     }
 
@@ -59,10 +69,21 @@ pipeline{
         container(name: 'kaniko', shell: '/busybox/sh') {
           withEnv(['PATH+EXTRA=/busybox']) {
             sh """#!/busybox/sh
-            /kaniko/executor --context `pwd` --destination ${imageTag()}
+            /kaniko/executor --context `pwd` --destination ${imageTag}
             """
           }
         }
+      }
+    }
+
+    post{
+      success {
+        script{slack.notifySuccess('dmd', appName, version.buildVersion)}
+      }
+      failure {
+        script{errorSummary.generate(LAST_STAGE)}
+
+        script{slack.notifyFailure('dmd', appName, version.buildVersion, LAST_STAGE)}
       }
     }
   }
