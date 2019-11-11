@@ -272,11 +272,11 @@ func ReadFileFn(t *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kw
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(filePath)
+	buf, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("there was a problem reading the file `%s': %v", filePath, err)
 	}
 
-	str := string(b)
+	str := string(buf)
 	return starlark.String(str), nil
 }
