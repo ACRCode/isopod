@@ -112,6 +112,7 @@ func New(c *Config, opts ...Option) (Runtime, error) {
 			"error":  starlark.NewBuiltin("error", addon.ErrorFn),
 			"sleep":  starlark.NewBuiltin("sleep", addon.SleepFn),
 			"getenv":  starlark.NewBuiltin("getenv", addon.LookupEnvFn),
+			"readFile":  starlark.NewBuiltin("readFile", addon.ReadFileFn),
 			"gke":    gke.NewGKEBuiltin(c.GCPSvcAcctKeyFile, c.UserAgent),
 			"onprem": onprem.NewOnPremBuiltin(c.KubeConfigPath),
 		},

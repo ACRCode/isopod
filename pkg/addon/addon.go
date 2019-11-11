@@ -23,6 +23,8 @@ import (
 	"os"
 	"time"
 
+	"io/ioutil"
+
 	log "github.com/golang/glog"
 	"go.starlark.net/starlark"
 
@@ -261,4 +263,20 @@ func LookupEnvFn(t *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, k
 	}
 
 	return starlark.None, fmt.Errorf("The env var `%s' does not exist", key)
+}
+
+// ReadFileFn implements built-in for reading a file.
+func ReadFileFn(t *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var filePath string
+	if err := starlark.UnpackPositionalArgs(b.Name(), args, kwargs, 1, &filePath); err != nil {
+		return nil, err
+	}
+
+	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("there was a problem reading the file `%s': %v", filePath, err)
+	}
+
+	str := string(b)
+	return starlark.String(str), nil
 }
